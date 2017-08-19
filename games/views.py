@@ -4,6 +4,8 @@ Chapter 2: Working with class based views and hyperlinked APIs in Django
 Author: Gaston C. Hillar - Twitter.com/gastonhillar
 Publisher: Packt Publishing Ltd. - http://www.packtpub.com
 """
+from datetime import datetime
+from django.utils import timezone
 from rest_framework.parsers import JSONParser
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -26,7 +28,7 @@ def game_list(request):
         return Response(game_serializer.errors,
                         status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['GET', 'PUT', 'POST', 'DELETE'])
+@api_view(['GET', 'PUT', 'DELETE'])
 def game_detail(request, pk):
     try:
         game = Game.objects.get(pk=pk)
@@ -44,5 +46,8 @@ def game_detail(request, pk):
         return Response(game_serializer.errors,
                         status=status.HTTP_400_BAD_REQUEST)
     elif request.method == 'DELETE':
+        today = timezone.make_aware(datetime.now(), timezone.get_current_timezone())
+        if today >= game.release_date:
+            return Response({'release_date':'Este jogo já foi lançado'}, status=status.HTTP_423_LOCKED)
         game.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
